@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33516.290
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenStreetMap.API", "OpenStreetMap.API\OpenStreetMap.API.csproj", "{82DBF026-B9A7-4801-8A5B-3CEF4BC9E18A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{20B0A0A4-7C71-4E83-9341-EA09D82287CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{82DBF026-B9A7-4801-8A5B-3CEF4BC9E18A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82DBF026-B9A7-4801-8A5B-3CEF4BC9E18A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82DBF026-B9A7-4801-8A5B-3CEF4BC9E18A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82DBF026-B9A7-4801-8A5B-3CEF4BC9E18A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20B0A0A4-7C71-4E83-9341-EA09D82287CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20B0A0A4-7C71-4E83-9341-EA09D82287CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20B0A0A4-7C71-4E83-9341-EA09D82287CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20B0A0A4-7C71-4E83-9341-EA09D82287CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {34406D5E-E56C-430C-BE20-E3AE38E9BDCB}
+	EndGlobalSection
+EndGlobal
