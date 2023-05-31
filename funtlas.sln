@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenStreetMap.API", "OpenSt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox", "Sandbox\Sandbox.csproj", "{20B0A0A4-7C71-4E83-9341-EA09D82287CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Funtlas.UI", "Funtlas.UI\Funtlas.UI.csproj", "{DD125411-98E1-4C03-9DB4-48AB2242EBF5}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{20B0A0A4-7C71-4E83-9341-EA09D82287CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20B0A0A4-7C71-4E83-9341-EA09D82287CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20B0A0A4-7C71-4E83-9341-EA09D82287CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DD125411-98E1-4C03-9DB4-48AB2242EBF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DD125411-98E1-4C03-9DB4-48AB2242EBF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DD125411-98E1-4C03-9DB4-48AB2242EBF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DD125411-98E1-4C03-9DB4-48AB2242EBF5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
