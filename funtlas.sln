@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenStreetMap.API", "OpenSt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox", "Sandbox\Sandbox.csproj", "{20B0A0A4-7C71-4E83-9341-EA09D82287CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Funtlas.UI", "Funtlas.UI\Funtlas.UI.csproj", "{E5774BD4-CE21-4682-99EA-83F29E031170}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Funtlas.UI", "Funtlas.UI\Funtlas.UI.csproj", "{E5774BD4-CE21-4682-99EA-83F29E031170}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
