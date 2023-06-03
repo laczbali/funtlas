@@ -4,7 +4,7 @@ namespace Funtlas.UI.Models.View
 {
     public class WaysDisplay
     {
-        public Polyline[] Ways { get; set; }
+        public List<Polyline> Ways { get; set; } = new List<Polyline>();
 
         public Point[] GetBounds()
         {

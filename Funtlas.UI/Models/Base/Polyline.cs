@@ -2,8 +2,8 @@
 {
     public class Polyline
     {
-        public Point[] Points { get; set; }
-        public Color Color { get; set; }
+        public List<Point> Points { get; set; } = new List<Point>();
+        public Color Color { get; set; } = new Color();
 
         public Point[] GetBounds()
         {

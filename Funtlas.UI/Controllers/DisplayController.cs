@@ -6,9 +6,9 @@ namespace Funtlas.UI.Controllers
     public class DisplayController : Controller
     {
         [HttpPost]
-        public IActionResult RegionSelect([FromBody] RegionSelect selector)
+        public async Task<IActionResult> RegionSelect([FromBody] RegionSelect selector)
         {
-            return Ok();
+            return RedirectToAction("action", "controller", selector);
         }
     }
 }
