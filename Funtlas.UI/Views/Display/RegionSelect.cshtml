@@ -1,0 +1,77 @@
+﻿<div id="map"></div>
+
+<div>
+    <button id="download" disabled>Download</button>
+</div>
+
+@{
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+@section Scripts
+{
+    @* handle bounding box selection *@
+    <script>
+        // create map
+        var map = L.map('map').setView([48.07, 20.63], 13);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // handle clicks
+        var bounds = [];
+        map.addEventListener('click', (event) => {
+            // we only want to handle the last two points
+            if(bounds.length > 1) {
+                // clear markers and bounding box
+                bounds = [];
+                map.eachLayer((layer) => {
+                    if(layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                    if(layer instanceof L.Rectangle) {
+                        map.removeLayer(layer);
+                    }
+                });
+
+                // disable the download button
+                document.getElementById("download").disabled = true;
+
+                return;
+            }
+
+            // add marker to map
+            var pos = event.latlng;
+            bounds.push(pos);
+            var marker = L.marker(pos).addTo(map);
+
+            // if we have two points
+            if(bounds.length > 1) {
+                //draw a bounding box
+                L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
+
+                // enable the download button
+                document.getElementById("download").disabled = false;
+            }
+        });
+    </script>
+
+    @* handle download button click *@
+    <script>
+        document.getElementById("download").addEventListener("click", () => {
+            var requestBody = {
+                "bounds": bounds.map(b => { return { "Lat": b.lat, "Lon": b.lng } })
+            };
+
+            // send request to backend
+            fetch("/Display/RegionSelect", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestBody)
+            })
+        });
+    </script>
+}
