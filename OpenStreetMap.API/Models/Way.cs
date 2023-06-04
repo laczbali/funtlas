@@ -1,4 +1,6 @@
-﻿namespace OpenStreetMap.API.Models
+﻿using Newtonsoft.Json;
+
+namespace OpenStreetMap.API.Models
 {
     public class Way
     {
@@ -6,6 +8,21 @@
         public string Type { get; set; }
         public List<long> Nodes { get; set; }
         public Dictionary<string, string> Tags { get; set; }
+
+        public WayRank? GetRank()
+        {
+            var rankStr = this.GetTag("highway")?.ToUpper();
+            if (rankStr is null)
+            {
+                return null;
+            }
+
+            if (Enum.TryParse(rankStr, out WayRank rank))
+            {
+                return rank;
+            }
+            return null;
+        }
 
         public string? GetTag(string key)
         {
@@ -24,13 +41,26 @@
 
         public T? GetTag<T>(string key)
         {
-            var value = this.GetTag(key);
-            if (value == null)
+            string? value = string.Empty;
+            try
             {
-                return default;
-            }
+                value = this.GetTag(key);
+                if (value == null)
+                {
+                    return default;
+                }
 
-            return (T)Convert.ChangeType(value, typeof(T));
+                if (typeof(T) == typeof(string))
+                {
+                    return (T)(object)value;
+                }
+
+                return JsonConvert.DeserializeObject<T>(value);
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Failed to convert tag [{key}] with value of [{value}] to type [{typeof(T).Name}]", e);
+            }
         }
     }
 }

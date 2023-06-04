@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\OpenStreetMap.API\OpenStreetMap.API.csproj" />
+    <ProjectReference Include="..\OpenStreetMap.Data\OpenStreetMap.Data.csproj" />
   </ItemGroup>
 
 </Project>

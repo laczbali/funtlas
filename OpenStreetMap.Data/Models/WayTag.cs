@@ -8,7 +8,7 @@ namespace OpenStreetMap.Data.Models
         public const string TableName = "WayTags";
 
         [PrimaryKey]
-        public string Id { get; protected set; }
+        public string Id { get; set; }
 
         private long wayId;
         public long WayId

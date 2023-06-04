@@ -1,4 +1,5 @@
-﻿using OpenStreetMap.API;
+﻿using Blaczko.Core.Utils;
+using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
 
 namespace OpenStreetMap.Data
@@ -23,16 +24,41 @@ namespace OpenStreetMap.Data
 
         internal async Task StartJob()
         {
-            this.InitDb();
+            try
+            {
+                await this.InitDb();
 
-            await this.DownloadRawData();
+                await this.DownloadRawData();
 
-            ReportComplete("Done");
+                await this.DownloadExtraNodeData();
+
+                ReportComplete("Done");
+            }
+            catch (Exception e)
+            {
+                ReportError(e, "Execution failed");
+            }
         }
 
-        private void InitDb()
+        private async Task InitDb()
         {
+            await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+            {
+                var tables = new List<Type>()
+                {
+                    typeof(Models.CompoundWay),
+                    typeof(Models.CompoundWayPart),
+                    typeof(Models.Node),
+                    typeof(Models.Way),
+                    typeof(Models.WayNode),
+                    typeof(Models.WayTag)
+                };
 
+                foreach (var t in tables)
+                {
+                    await db.CreateTableAsync(t);
+                }
+            });
         }
 
         private async Task DownloadRawData()
@@ -43,7 +69,7 @@ namespace OpenStreetMap.Data
             }
 
             // download raw way data
-            ReportProgress("Downloading ways");
+            ReportProgress("Downloading raw way data");
             List<Way> rawWayData = new List<Way>();
             try
             {
@@ -51,7 +77,7 @@ namespace OpenStreetMap.Data
             }
             catch (Exception e)
             {
-                ReportError(e, "Error downloading initial way data");
+                ReportError(e, "Error downloading raw way data");
             }
 
             // map raw way data to db model
@@ -69,7 +95,7 @@ namespace OpenStreetMap.Data
                     MaxSpeed = w.GetTag<int?>("maxspeed"),
                     Name = w.GetTag<string?>("name"),
                     Surface = w.GetTag<string?>("surface"),
-                    Rank = w.GetTag<WayRank?>("highway")
+                    Rank = w.GetRank()
                 });
 
                 nodes.AddRange(w.Nodes.Select(n => new Models.Node
@@ -82,7 +108,7 @@ namespace OpenStreetMap.Data
                     WayId = w.Id,
                     NodeId = n,
                     Order = i
-                });
+                }).ToList();
                 wn.First().IsEndNode = true;
                 wn.Last().IsEndNode = true;
                 wayNodes.AddRange(wn);
@@ -99,7 +125,29 @@ namespace OpenStreetMap.Data
 
             // save to db
             nodes = nodes.DistinctBy(x => x.Id).ToList();
+            await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+            {
+                await db.InsertAllAsync(ways);
+                await db.InsertAllAsync(nodes);
+                await db.InsertAllAsync(wayNodes);
+                await db.InsertAllAsync(wayTags);
+            });
+        }
 
+        private async Task DownloadExtraNodeData()
+        {
+            // IsCrossroad, Lat\Lon 
+            return;
+        }
+
+        private async Task BuildCompoundRoads()
+        {
+            return;
+        }
+
+        private async Task GradeRoads()
+        {
+            return;
         }
 
         private void ReportProgress(string action, int? progress = null)
