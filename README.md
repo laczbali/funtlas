@@ -3,9 +3,6 @@
 The goal of this app is to find roads that are fun to drive on (read: twisty, good condition, etc).
 It uses data from Open Street Map, with the Overpass API.
 
-# Next steps
-- Look into map display options [eg](https://wiki.openstreetmap.org/wiki/Vector_tiles#Generators)
-
 # (Planned) User Flow
 1. User selects a country from a dropdown
 2. App queries and shows a list of areas within that country (eg: North, South, etc)
