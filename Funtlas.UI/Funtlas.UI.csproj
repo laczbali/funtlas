@@ -8,7 +8,7 @@
     <PackageReference Include="ElectronNET.API" Version="23.6.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OpenStreetMap.API\OpenStreetMap.API.csproj" />
+    <ProjectReference Include="..\OpenStreetMap.Data\OpenStreetMap.Data.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="electron.manifest.json">

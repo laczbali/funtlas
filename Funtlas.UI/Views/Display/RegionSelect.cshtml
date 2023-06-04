@@ -59,19 +59,24 @@
 
     @* handle download button click *@
     <script>
-        document.getElementById("download").addEventListener("click", () => {
+        document.getElementById("download").addEventListener("click", async () => {
             var requestBody = {
                 "bounds": bounds.map(b => { return { "Lat": b.lat, "Lon": b.lng } })
             };
 
             // send request to backend
-            fetch("/Display/RegionSelect", {
+            var response = await fetch("/Display/RegionSelect", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(requestBody)
             })
+
+            if(window.location.href !== response.url)
+            {
+                window.location.href = response.url;
+            }
         });
     </script>
 }
