@@ -55,6 +55,19 @@ namespace OpenStreetMap.API
             return await RunQuery<Way>(query);
         }
 
+        public async Task<List<Node>> GetNodesById(IEnumerable<long> nodeIds)
+        {
+            var query = $@"
+            [out:json];
+            (
+              node(id:{string.Join(',', nodeIds)});
+            );
+            out;
+            ";
+
+            return await RunQuery<Node>(query);
+        }
+
         private async Task<List<T>> RunQuery<T>(string query)
         {
             var result = await HttpClientWrapper.MakeRequestAsync<Base<T>>(

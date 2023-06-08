@@ -34,6 +34,18 @@ namespace OpenStreetMap.Data.Models
 
         public int Order { get; set; }
 
+        /// <summary>
+        /// First or last node of the way
+        /// </summary>
         public bool IsEndNode { get; set; }
+
+        /// <summary>
+        /// If true, the way is a crossroad <br/>
+        /// - IsEndNode && has more than 2 connecting ways <br/>
+        /// - !IsEndNode && has more than 1 coonecting way <br/>
+        /// All connecting ways are taken into account, even if they are not in the DB
+        /// due to wayrank or bounding box filtering
+        /// </summary>
+        public bool IsCrossRoad { get; set; }
     }
 }

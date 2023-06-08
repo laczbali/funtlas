@@ -16,13 +16,13 @@ var testArea = new Area
 mapDownloadProvider.StartDownload(testArea, WayRank.PRIMARY | WayRank.SECONDARY);
 mapDownloadProvider.OnDownloadProgress += (sender, e) =>
 {
-    Console.WriteLine($"{e.Progress?.ToString("00") ?? "--"}%\t{e.Message}");
+    Console.WriteLine(e);
 };
 mapDownloadProvider.OnDownloadComplete += (sender, e) =>
 {
-    Console.WriteLine($"Finished" + (e.Error is null ? string.Empty : $"\nERROR: {e.Error.Message}\n{e.Error.StackTrace}"));
+    Console.WriteLine(e);
 };
 
 await mapDownloadProvider.JobAwaiter.Task;
 
-Console.WriteLine("Done");
+Console.WriteLine("\n\nSANDBOX DONE");

@@ -11,8 +11,8 @@ namespace OpenStreetMap.Data
 
         internal Area? BoundingBox;
         internal WayRank? WayRanks;
-        internal string DbPath = Directory.GetCurrentDirectory();
-        internal string DbName = $"{DateTime.Now.Ticks}.db3";
+        internal string DbPath;
+        internal string DbName;
         internal string DbFullPath => Path.Combine(this.DbPath, this.DbName);
 
         private readonly OverpassAPI overpassAPI;
@@ -20,6 +20,9 @@ namespace OpenStreetMap.Data
         internal MapDownloadJob(OverpassAPI overpassAPI)
         {
             this.overpassAPI = overpassAPI;
+
+            this.DbPath = FileSystemUtil.EnsureDir(Path.Combine(Directory.GetCurrentDirectory(), "maps"));
+            this.DbName = $"{DateTime.Now.Ticks}.db3";
         }
 
         internal async Task StartJob()
@@ -31,6 +34,10 @@ namespace OpenStreetMap.Data
                 await this.DownloadRawData();
 
                 await this.DownloadExtraNodeData();
+
+                await this.BuildCompoundRoads();
+
+                await this.GradeRoads();
 
                 ReportComplete("Done");
             }
@@ -61,6 +68,14 @@ namespace OpenStreetMap.Data
             });
         }
 
+        /// <summary>
+        /// Downloads the raw data from the Overpass API and saves it to the database <br/>
+        /// - <see cref="Models.Way"/>      <br/>
+        /// - <see cref="Models.Node"/>     <br/>
+        /// - <see cref="Models.WayNode"/>  <br/>
+        /// - <see cref="Models.WayTag"/>   <br/>
+        /// </summary>
+        /// <returns></returns>
         private async Task DownloadRawData()
         {
             if (this.BoundingBox is null || this.WayRanks is null)
@@ -134,17 +149,107 @@ namespace OpenStreetMap.Data
             });
         }
 
+        /// <summary>
+        /// Adds additional data to nodes in db <br/>
+        /// - <see cref="Models.Node"/> Lat\Lon         <br/>
+        /// - <see cref="Models.WayNode"/> IsCrossroad  <br/>
+        /// </summary>
+        /// <returns></returns>
         private async Task DownloadExtraNodeData()
         {
-            // IsCrossroad, Lat\Lon 
-            return;
+            const int ChunkSize = 50;
+
+            async Task ProcessEntityChunk<Tentity>(
+                string reportText,
+                string dbQuery,
+                Func<Tentity[], Task<List<Tentity>>> processChunkFunc)
+                where Tentity : new()
+            {
+                ReportProgress(reportText);
+
+                // get all raw data
+                var allEntities = await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+                {
+                    return await db.QueryAsync<Tentity>(dbQuery);
+                });
+
+                // split it into chunks, so we don't make too large requests
+                var entityChunks = allEntities.Chunk(ChunkSize).ToList();
+                int entityIndex = 0;
+
+                foreach (var entityChunk in entityChunks)
+                {
+                    // call the processing function, save the updated data to db
+                    var updatedEntities = await processChunkFunc(entityChunk);
+
+                    await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+                    {
+                        await db.UpdateAllAsync(updatedEntities);
+                    });
+
+                    entityIndex++;
+                    ReportProgress(reportText, (int)((double)entityIndex / entityChunks.Count * 100));
+                }
+            }
+
+            // download Lat\Lon data
+            await ProcessEntityChunk<Models.Node>(
+                "Downloading Node Lat-Lon data",
+                SqlQueries.GetAllNodes,
+                async (chunk) =>
+                {
+                    var nodeIds = chunk.Select(x => x.Id).ToList();
+                    var nodeData = await this.overpassAPI.GetNodesById(nodeIds);
+                    return nodeData.Select(x => new Models.Node
+                    {
+                        Id = x.Id,
+                        Lat = x.Lat,
+                        Lon = x.Lon
+                    }).ToList();
+                });
+
+            // check if a node is a crossroads or not
+            // if a WayNode is not an end node, it can only appear under one way
+            // if a WayNode is an end node, it can only appear under two ways
+            // otherwise a WayNode is a crossroads
+            await ProcessEntityChunk<Models.WayNode>(
+                "Downloading Node crossroad info",
+                SqlQueries.GetAllWayNodes,
+                async (chunk) =>
+                {
+                    var nodeIds = chunk.Select(x => x.NodeId).Distinct().ToList();
+                    var wayData = await this.overpassAPI.GetWaysOfNodes(nodeIds);
+
+                    bool IsCrossroad(long nodeId, bool isEndNode)
+                    {
+                        var connectingWayCount = wayData.Where(wd => wd.Nodes.Contains(nodeId)).Count();
+                        return isEndNode ? connectingWayCount > 2 : connectingWayCount > 1;
+                    }
+
+                    return chunk.Select(x => new Models.WayNode
+                    {
+                        WayId = x.WayId,
+                        NodeId = x.NodeId,
+                        Order = x.Order,
+                        IsEndNode = x.IsEndNode,
+                        IsCrossRoad = IsCrossroad(x.NodeId, x.IsEndNode)
+                    }).ToList();
+                });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private async Task BuildCompoundRoads()
         {
             return;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         private async Task GradeRoads()
         {
             return;
@@ -185,5 +290,22 @@ namespace OpenStreetMap.Data
         public int? Progress { get; set; } = null;
         public Exception? Error { get; set; } = null;
         public bool IsRunning { get; set; } = true;
+
+        public override string ToString()
+        {
+            var timeString = DateTime.Now.ToString("HH:mm");
+            var progressString = Progress?.ToString("00") ?? "--";
+
+            if (Error is null)
+            {
+                var baseString = $"{timeString}\t{progressString}%\t{Message}";
+                return IsRunning ? baseString : $"{timeString}\tDONE";
+            }
+            else
+            {
+                var errorString = $"{Error.Message}\n{Error.StackTrace}";
+                return $"{timeString}\tERROR\t{Message} @ {progressString}\n{errorString}";
+            }
+        }
     }
 }
