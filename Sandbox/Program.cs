@@ -23,6 +23,6 @@ mapDownloadProvider.OnDownloadComplete += (sender, e) =>
     Console.WriteLine(e);
 };
 
-await mapDownloadProvider.JobAwaiter.Task;
+await mapDownloadProvider.JobTask;
 
 Console.WriteLine("\n\nSANDBOX DONE");

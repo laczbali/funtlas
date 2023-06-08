@@ -14,14 +14,16 @@ namespace OpenStreetMap.Data
 
         public event EventHandler<JobStatus>? OnDownloadProgress;
         public event EventHandler<JobStatus>? OnDownloadComplete;
-        public TaskCompletionSource JobAwaiter = new TaskCompletionSource();
+
+        private TaskCompletionSource JobAwaiterSource = new TaskCompletionSource();
+        public Task JobTask => this.JobAwaiterSource.Task;
 
         private MapDownloadJob? MapDownloadJob = null;
         private JobStatus? JobStatus = null;
 
         public void StartDownload(Area boundingBox, WayRank wayRanks)
         {
-            this.JobAwaiter = new TaskCompletionSource();
+            this.JobAwaiterSource = new TaskCompletionSource();
             this.JobStatus = new JobStatus();
             this.MapDownloadJob = new MapDownloadJob(this.overpassAPI);
 
@@ -52,7 +54,7 @@ namespace OpenStreetMap.Data
             this.MapDownloadJob = null;
 
             this.OnDownloadComplete?.Invoke(this, e);
-            this.JobAwaiter.SetResult();
+            this.JobAwaiterSource.SetResult();
         }
     }
 }
