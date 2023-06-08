@@ -39,6 +39,8 @@ namespace OpenStreetMap.Data
 
                 await this.GradeRoads();
 
+                await this.SaveMapData();
+
                 ReportComplete("Done");
             }
             catch (Exception e)
@@ -47,6 +49,10 @@ namespace OpenStreetMap.Data
             }
         }
 
+        /// <summary>
+        /// Creates the necessary tables in the DB
+        /// </summary>
+        /// <returns></returns>
         private async Task InitDb()
         {
             await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
@@ -55,6 +61,7 @@ namespace OpenStreetMap.Data
                 {
                     typeof(Models.CompoundWay),
                     typeof(Models.CompoundWayPart),
+                    typeof(Models.MapData),
                     typeof(Models.Node),
                     typeof(Models.Way),
                     typeof(Models.WayNode),
@@ -243,7 +250,6 @@ namespace OpenStreetMap.Data
         /// <returns></returns>
         private async Task BuildCompoundRoads()
         {
-            return;
         }
 
         /// <summary>
@@ -252,7 +258,14 @@ namespace OpenStreetMap.Data
         /// <returns></returns>
         private async Task GradeRoads()
         {
-            return;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private async Task SaveMapData()
+        {
         }
 
         private void ReportProgress(string action, int? progress = null)
