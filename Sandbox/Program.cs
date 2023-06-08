@@ -1,6 +1,6 @@
 ﻿using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
-using OpenStreetMap.Data;
+using OpenStreetMap.Data.Download;
 
 var overpassApi = new OverpassAPI();
 var mapDownloadProvider = new MapDownloadProvider(overpassApi);

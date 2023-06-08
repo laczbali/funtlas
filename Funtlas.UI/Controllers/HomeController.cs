@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using OpenStreetMap.Data;
+using OpenStreetMap.Data.Download;
 
 namespace Funtlas.UI.Controllers
 {

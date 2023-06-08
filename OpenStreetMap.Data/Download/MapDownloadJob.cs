@@ -2,7 +2,7 @@
 using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
 
-namespace OpenStreetMap.Data
+namespace OpenStreetMap.Data.Download
 {
     internal class MapDownloadJob
     {
@@ -13,7 +13,7 @@ namespace OpenStreetMap.Data
         internal WayRank? WayRanks;
         internal string DbPath;
         internal string DbName;
-        internal string DbFullPath => Path.Combine(this.DbPath, this.DbName);
+        internal string DbFullPath => Path.Combine(DbPath, DbName);
 
         private readonly OverpassAPI overpassAPI;
 
@@ -21,25 +21,25 @@ namespace OpenStreetMap.Data
         {
             this.overpassAPI = overpassAPI;
 
-            this.DbPath = FileSystemUtil.EnsureDir(Path.Combine(Directory.GetCurrentDirectory(), "maps"));
-            this.DbName = $"{DateTime.Now.Ticks}.db3";
+            DbPath = FileSystemUtil.EnsureDir(Path.Combine(Directory.GetCurrentDirectory(), "maps"));
+            DbName = $"{DateTime.Now.Ticks}.db3";
         }
 
         internal async Task StartJob()
         {
             try
             {
-                await this.InitDb();
+                await InitDb();
 
-                await this.DownloadRawData();
+                await DownloadRawData();
 
-                await this.DownloadExtraNodeData();
+                await DownloadExtraNodeData();
 
-                await this.BuildCompoundRoads();
+                await BuildCompoundRoads();
 
-                await this.GradeRoads();
+                await GradeRoads();
 
-                await this.SaveMapData();
+                await SaveMapData();
 
                 ReportComplete("Done");
             }
@@ -55,7 +55,7 @@ namespace OpenStreetMap.Data
         /// <returns></returns>
         private async Task InitDb()
         {
-            await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+            await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
             {
                 var tables = new List<Type>()
                 {
@@ -85,7 +85,7 @@ namespace OpenStreetMap.Data
         /// <returns></returns>
         private async Task DownloadRawData()
         {
-            if (this.BoundingBox is null || this.WayRanks is null)
+            if (BoundingBox is null || WayRanks is null)
             {
                 throw new InvalidOperationException("BoundingBox and WayRanks must be set before starting the job.");
             }
@@ -95,7 +95,7 @@ namespace OpenStreetMap.Data
             List<Way> rawWayData = new List<Way>();
             try
             {
-                rawWayData = await this.overpassAPI.GetWaysOfArea(this.BoundingBox, (WayRank)this.WayRanks);
+                rawWayData = await overpassAPI.GetWaysOfArea(BoundingBox, (WayRank)WayRanks);
             }
             catch (Exception e)
             {
@@ -147,7 +147,7 @@ namespace OpenStreetMap.Data
 
             // save to db
             nodes = nodes.DistinctBy(x => x.Id).ToList();
-            await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+            await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
             {
                 await db.InsertAllAsync(ways);
                 await db.InsertAllAsync(nodes);
@@ -175,7 +175,7 @@ namespace OpenStreetMap.Data
                 ReportProgress(reportText);
 
                 // get all raw data
-                var allEntities = await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+                var allEntities = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
                 {
                     return await db.QueryAsync<Tentity>(dbQuery);
                 });
@@ -206,7 +206,7 @@ namespace OpenStreetMap.Data
                 async (chunk) =>
                 {
                     var nodeIds = chunk.Select(x => x.Id).ToList();
-                    var nodeData = await this.overpassAPI.GetNodesById(nodeIds);
+                    var nodeData = await overpassAPI.GetNodesById(nodeIds);
                     return nodeData.Select(x => new Models.Node
                     {
                         Id = x.Id,
@@ -225,7 +225,7 @@ namespace OpenStreetMap.Data
                 async (chunk) =>
                 {
                     var nodeIds = chunk.Select(x => x.NodeId).Distinct().ToList();
-                    var wayData = await this.overpassAPI.GetWaysOfNodes(nodeIds);
+                    var wayData = await overpassAPI.GetWaysOfNodes(nodeIds);
 
                     bool IsCrossroad(long nodeId, bool isEndNode)
                     {
@@ -270,7 +270,7 @@ namespace OpenStreetMap.Data
 
         private void ReportProgress(string action, int? progress = null)
         {
-            this.OnDownloadProgress?.Invoke(this, new JobStatus
+            OnDownloadProgress?.Invoke(this, new JobStatus
             {
                 Message = action,
                 Progress = progress
@@ -279,7 +279,7 @@ namespace OpenStreetMap.Data
 
         private void ReportComplete(string message)
         {
-            this.OnDownloadComplete?.Invoke(this, new JobStatus
+            OnDownloadComplete?.Invoke(this, new JobStatus
             {
                 Message = message,
                 IsRunning = false
@@ -288,7 +288,7 @@ namespace OpenStreetMap.Data
 
         private void ReportError(Exception error, string? message = null)
         {
-            this.OnDownloadComplete?.Invoke(this, new JobStatus
+            OnDownloadComplete?.Invoke(this, new JobStatus
             {
                 Message = message,
                 Error = error,

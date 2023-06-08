@@ -1,5 +1,5 @@
 ﻿using ElectronNET.API;
-using OpenStreetMap.Data;
+using OpenStreetMap.Data.Download;
 
 namespace Funtlas.UI
 {

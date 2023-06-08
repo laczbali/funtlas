@@ -1,6 +1,6 @@
 ﻿using OpenStreetMap.Data.Models;
 
-namespace OpenStreetMap.Data
+namespace OpenStreetMap.Data.Download
 {
     internal static class SqlQueries
     {
