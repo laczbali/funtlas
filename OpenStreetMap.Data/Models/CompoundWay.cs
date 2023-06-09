@@ -5,7 +5,7 @@ namespace OpenStreetMap.Data.Models
     [Table(TableName)]
     public class CompoundWay
     {
-        const string TableName = "CompoundWays";
+        internal const string TableName = "CompoundWays";
 
         [PrimaryKey]
         [AutoIncrement]

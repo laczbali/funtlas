@@ -1,4 +1,4 @@
-using Blaczko.Core.Utils;
+﻿using Blaczko.Core.Utils;
 using Newtonsoft.Json;
 using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
@@ -51,7 +51,7 @@ namespace OpenStreetMap.Data.Download
         }
 
         /// <summary>
-        /// Creates the necessary tables in the DB
+        /// Creates the necessary tables and views in the DB
         /// </summary>
         /// <returns></returns>
         private async Task InitDb()
@@ -72,6 +72,17 @@ namespace OpenStreetMap.Data.Download
                 foreach (var t in tables)
                 {
                     await db.CreateTableAsync(t);
+                }
+
+                var views = new List<string>()
+                {
+                    ViewDefinitions.CompoundWayData
+                };
+
+                foreach (var v in views)
+                {
+                    var script = $"{ViewDefinitions.CreateViewBaseQuery}\n{v}";
+                    await db.ExecuteAsync(script);
                 }
             });
         }

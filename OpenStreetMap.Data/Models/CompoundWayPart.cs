@@ -5,7 +5,7 @@ namespace OpenStreetMap.Data.Models
     [Table(TableName)]
     public class CompoundWayPart
     {
-        const string TableName = "CompoundWayParts";
+        internal const string TableName = "CompoundWayParts";
 
         [PrimaryKey]
         public string Id { get; set; }

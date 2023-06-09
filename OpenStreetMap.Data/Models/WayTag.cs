@@ -5,7 +5,7 @@ namespace OpenStreetMap.Data.Models
     [Table(TableName)]
     public class WayTag
     {
-        public const string TableName = "WayTags";
+        internal const string TableName = "WayTags";
 
         [PrimaryKey]
         public string Id { get; set; }

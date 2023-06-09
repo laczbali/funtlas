@@ -5,7 +5,7 @@ namespace OpenStreetMap.Data.Models
     [Table(TableName)]
     public class MapData
     {
-        public const string TableName = "MapData";
+        internal const string TableName = "MapData";
 
         [PrimaryKey]
         public string Key { get; set; }

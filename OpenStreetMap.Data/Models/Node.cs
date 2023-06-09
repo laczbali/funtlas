@@ -6,7 +6,7 @@ namespace OpenStreetMap.Data.Models
     [Table(TableName)]
     public class Node
     {
-        public const string TableName = "Nodes";
+        internal const string TableName = "Nodes";
 
         [PrimaryKey]
         public long Id { get; set; }

@@ -5,7 +5,7 @@ namespace OpenStreetMap.Data.Models
     [Table(TableName)]
     public class WayNode
     {
-        public const string TableName = "WayNodes";
+        internal const string TableName = "WayNodes";
 
         [PrimaryKey]
         public string Id { get; set; }
