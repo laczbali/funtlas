@@ -1,4 +1,4 @@
-﻿using Blaczko.Core.Utils;
+using Blaczko.Core.Utils;
 using Newtonsoft.Json;
 using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
@@ -325,16 +325,23 @@ namespace OpenStreetMap.Data.Download
             int compoundWayIndex = 0;
             foreach (var compound in compounds)
             {
+                var compoundWayParts = compound.Distinct().Select(x => new Models.CompoundWayPart
+                {
+                    CompoundWayId = compoundWayIndex,
+                    WayId = x
+                });
+
+                if (!compoundWayParts.Any())
+                {
+                    continue;
+                }
+
                 newCompoundWays.Add(new Models.CompoundWay
                 {
                     Id = compoundWayIndex
                 });
 
-                newCompoundWayParts.AddRange(compound.Distinct().Select(x => new Models.CompoundWayPart
-                {
-                    CompoundWayId = compoundWayIndex,
-                    WayId = x
-                }));
+                newCompoundWayParts.AddRange(compoundWayParts);
 
                 compoundWayIndex++;
             }
