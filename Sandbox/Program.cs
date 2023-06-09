@@ -7,10 +7,10 @@ var mapDownloadProvider = new MapDownloadProvider(overpassApi);
 
 var testArea = new Area
 {
-    LatNorth = 48.07083f,
-    LatSouth = 48.06372f,
-    LonEast = 20.63521f,
-    LonWest = 20.62869f
+    LatNorth = 48.08083f,
+    LatSouth = 48.05372f,
+    LonEast = 20.66521f,
+    LonWest = 20.60869f
 };
 
 mapDownloadProvider.StartDownload(testArea, WayRank.PRIMARY | WayRank.SECONDARY);

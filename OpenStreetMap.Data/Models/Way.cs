@@ -15,8 +15,13 @@ namespace OpenStreetMap.Data.Models
 
         public string? Name { get; set; }
 
-        public int? MaxSpeed { get; set; }
-
-        public string? Surface { get; set; }
+        /// <summary>
+        /// Calculated by getting the absolute angle between every 3 Nodes, then averaging them.<br/>
+        /// In this context                 <br/>
+        /// - 0 degree is a straight line   <br/>
+        /// - 180 degree is a hairpin turn  <br/>
+        /// - Angles outside that range can not happen
+        /// </summary>
+        public float AverageAngle { get; set; }
     }
 }

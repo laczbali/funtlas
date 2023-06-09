@@ -31,7 +31,5 @@ namespace OpenStreetMap.Data.Models
                 this.Id = $"{this.compoundWayId}@{this.wayId}";
             }
         }
-
-        public int Order { get; set; }
     }
 }

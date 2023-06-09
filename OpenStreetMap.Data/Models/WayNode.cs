@@ -32,7 +32,7 @@ namespace OpenStreetMap.Data.Models
             }
         }
 
-        public int Order { get; set; }
+        public int SortOrder { get; set; }
 
         /// <summary>
         /// First or last node of the way
@@ -40,12 +40,17 @@ namespace OpenStreetMap.Data.Models
         public bool IsEndNode { get; set; }
 
         /// <summary>
-        /// If true, the way is a crossroad <br/>
+        /// If true, the node has more ways connecting <br/>
         /// - IsEndNode && has more than 2 connecting ways <br/>
-        /// - !IsEndNode && has more than 1 coonecting way <br/>
+        /// - !IsEndNode && has more than 1 connecting way <br/>
         /// All connecting ways are taken into account, even if they are not in the DB
         /// due to wayrank or bounding box filtering
         /// </summary>
-        public bool IsCrossRoad { get; set; }
+        public bool HasCrossing { get; set; }
+
+        /// <summary>
+        /// Similar to <see cref="HasCrossing"/>, but only considers ways that are in the DB
+        /// </summary>
+        public bool IsCrossroad { get; set; }
     }
 }

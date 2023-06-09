@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Blaczko.Core" Version="1.0.4" />
+    <PackageReference Include="MathNet.Spatial" Version="0.6.0" />
   </ItemGroup>
 
   <ItemGroup>

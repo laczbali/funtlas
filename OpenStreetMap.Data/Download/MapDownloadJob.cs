@@ -1,4 +1,5 @@
 ﻿using Blaczko.Core.Utils;
+using Newtonsoft.Json;
 using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
 
@@ -35,9 +36,9 @@ namespace OpenStreetMap.Data.Download
 
                 await DownloadExtraNodeData();
 
-                await BuildCompoundRoads();
+                await BuildCompoundWays();
 
-                await GradeRoads();
+                await CalculateAngles();
 
                 await SaveMapData();
 
@@ -114,9 +115,7 @@ namespace OpenStreetMap.Data.Download
                 ways.Add(new Models.Way
                 {
                     Id = w.Id,
-                    MaxSpeed = w.GetTag<int?>("maxspeed"),
                     Name = w.GetTag<string?>("name"),
-                    Surface = w.GetTag<string?>("surface"),
                     Rank = w.GetRank()
                 });
 
@@ -129,7 +128,7 @@ namespace OpenStreetMap.Data.Download
                 {
                     WayId = w.Id,
                     NodeId = n,
-                    Order = i
+                    SortOrder = i
                 }).ToList();
                 wn.First().IsEndNode = true;
                 wn.Last().IsEndNode = true;
@@ -142,7 +141,7 @@ namespace OpenStreetMap.Data.Download
                     Value = t.Value
                 }));
 
-                ReportProgress("Mapping ways to DB models", (int)((double)ways.Count / rawWayData.Count * 100));
+                ReportProgress("Mapping ways to DB models", ways.Count, rawWayData.Count);
             }
 
             // save to db
@@ -195,7 +194,7 @@ namespace OpenStreetMap.Data.Download
                     });
 
                     entityIndex++;
-                    ReportProgress(reportText, (int)((double)entityIndex / entityChunks.Count * 100));
+                    ReportProgress(reportText, entityIndex, entityChunks.Count);
                 }
             }
 
@@ -225,39 +224,176 @@ namespace OpenStreetMap.Data.Download
                 async (chunk) =>
                 {
                     var nodeIds = chunk.Select(x => x.NodeId).Distinct().ToList();
-                    var wayData = await overpassAPI.GetWaysOfNodes(nodeIds);
+                    var remoteWayData = await overpassAPI.GetWaysOfNodes(nodeIds);
 
-                    bool IsCrossroad(long nodeId, bool isEndNode)
+                    bool HasCrossing(long nodeId, bool isEndNode)
                     {
-                        var connectingWayCount = wayData.Where(wd => wd.Nodes.Contains(nodeId)).Count();
+                        var connectingWayCount = remoteWayData.Where(wd => wd.Nodes.Contains(nodeId)).Count();
                         return isEndNode ? connectingWayCount > 2 : connectingWayCount > 1;
                     }
 
-                    return chunk.Select(x => new Models.WayNode
+                    async Task<bool> IsCrossRoad(long nodeId, bool isEndNode)
                     {
-                        WayId = x.WayId,
-                        NodeId = x.NodeId,
-                        Order = x.Order,
-                        IsEndNode = x.IsEndNode,
-                        IsCrossRoad = IsCrossroad(x.NodeId, x.IsEndNode)
-                    }).ToList();
+                        var wayNodes = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+                        {
+                            return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllWayNodesOfNode, nodeId);
+                        });
+                        var connectingWayCount = wayNodes.Count();
+                        return isEndNode ? connectingWayCount > 2 : connectingWayCount > 1;
+                    }
+
+                    var wayNodes = new List<Models.WayNode>();
+                    foreach (var item in chunk)
+                    {
+                        var hasCrossing = HasCrossing(item.NodeId, item.IsEndNode);
+                        var isCrossroad = await IsCrossRoad(item.NodeId, item.IsEndNode);
+
+                        wayNodes.Add(new Models.WayNode
+                        {
+                            WayId = item.WayId,
+                            NodeId = item.NodeId,
+                            SortOrder = item.SortOrder,
+                            IsEndNode = item.IsEndNode,
+                            HasCrossing = hasCrossing,
+                            IsCrossroad = isCrossroad
+                        });
+                    }
+
+                    return wayNodes;
                 });
         }
 
         /// <summary>
-        /// 
+        /// Build longer, consecutive ways from smaller ways, where one ends where the other begins. <br/>
+        /// Results will be <see cref="Models.CompoundWay"/> and <see cref="Models.CompoundWayNode"/>
         /// </summary>
         /// <returns></returns>
-        private async Task BuildCompoundRoads()
+        private async Task BuildCompoundWays()
         {
+            ReportProgress("Building compound ways");
+
+            // build compound ways
+
+            var allEndWayNodes = await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+            {
+                return await db.QueryAsync<Models.WayNode>(SqlQueries.GetNonCrossEndWayNodes);
+            });
+
+            List<List<long>> compounds = allEndWayNodes.Select(x => new List<long> { x.WayId }).ToList();
+
+            bool addedNew = false;
+            do
+            {
+                addedNew = false;
+                foreach (var compound in compounds)
+                {
+                    // basically, we are listing all the ways added to the collection (by end-nodes)
+                    // and all the ways that are not added (also by end-nodes)
+                    // if a not-added way begins, where an added one ends,
+                    // there will be an "intersect" end-node between the two
+                    // and we add the way that owns that end-node to the collection
+                    // and by extension, we add its other ("farther") end-node
+
+                    var haveEndWayNodes = allEndWayNodes.Where(x => compound.Contains(x.WayId));
+                    var haveNodeIds = haveEndWayNodes.Select(x => x.NodeId).Distinct();
+
+                    var notHaveEndWayNodes = allEndWayNodes.Except(haveEndWayNodes);
+                    var toAddWayNodes = notHaveEndWayNodes.Where(x => haveNodeIds.Contains(x.NodeId));
+                    var toAddWayIds = toAddWayNodes.Select(x => x.WayId);
+
+                    if (toAddWayIds.Count() > 0)
+                    {
+                        compound.AddRange(toAddWayIds);
+                        addedNew = true;
+                    }
+                }
+            }
+            while (addedNew);
+
+            // get rid of duplicates, save to DB
+
+            compounds = compounds.DistinctBy(compounds =>
+            {
+                var distinct = compounds.Distinct();
+                var ordered = distinct.OrderBy(x => x);
+                var stringified = string.Join(',', ordered);
+                return stringified ?? string.Empty;
+            }).ToList();
+
+            var newCompoundWays = new List<Models.CompoundWay>();
+            var newCompoundWayParts = new List<Models.CompoundWayPart>();
+            int compoundWayIndex = 0;
+            foreach (var compound in compounds)
+            {
+                newCompoundWays.Add(new Models.CompoundWay
+                {
+                    Id = compoundWayIndex
+                });
+
+                newCompoundWayParts.AddRange(compound.Distinct().Select(x => new Models.CompoundWayPart
+                {
+                    CompoundWayId = compoundWayIndex,
+                    WayId = x
+                }));
+
+                compoundWayIndex++;
+            }
+
+            await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+            {
+                await db.InsertAllAsync(newCompoundWays);
+                await db.InsertAllAsync(newCompoundWayParts);
+            });
         }
 
         /// <summary>
-        /// 
+        /// Goes through all the ways in the DB, and caluclates the average angle between its nodes.
+        /// The result will be saved to the DB.
         /// </summary>
         /// <returns></returns>
-        private async Task GradeRoads()
+        private async Task CalculateAngles()
         {
+            ReportProgress("Calulating road angles", 0);
+
+            var allWays = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+            {
+                return await db.QueryAsync<Models.Way>(SqlQueries.GetAllWays);
+            });
+
+            int wayIndex = 0;
+            foreach (var way in allWays)
+            {
+                var nodes = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+                {
+                    return await db.QueryAsync<Models.Node>(SqlQueries.GetAllNodesOfWay, way.Id);
+                });
+
+                if (nodes.Count < 3)
+                {
+                    way.AverageAngle = 0;
+                    continue;
+                }
+
+                var angles = new List<float>();
+
+                for (int i = 2; i < nodes.Count; i++)
+                {
+                    var node1 = nodes[i - 2];
+                    var node2 = nodes[i - 1];
+                    var node3 = nodes[i];
+                    angles.Add(Models.Node.GetAngleBetween(node1, node2, node3));
+                }
+
+                way.AverageAngle = angles.Average();
+
+                wayIndex++;
+                ReportProgress("Calulating road angles", wayIndex, allWays.Count);
+            }
+
+            await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+            {
+                await db.UpdateAllAsync(allWays);
+            });
         }
 
         /// <summary>
@@ -266,6 +402,25 @@ namespace OpenStreetMap.Data.Download
         /// <returns></returns>
         private async Task SaveMapData()
         {
+            var data = new List<Models.MapData>
+            {
+                new Models.MapData
+                {
+                    Key = "BoundingBox",
+                    Value = JsonConvert.SerializeObject(BoundingBox)
+                }
+            };
+
+            await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+            {
+                await db.InsertAllAsync(data);
+            });
+        }
+
+        private void ReportProgress(string action, int currentIndex, int maxIndex)
+        {
+            var progress = (int)((double)currentIndex / maxIndex * 100);
+            ReportProgress(action, progress);
         }
 
         private void ReportProgress(string action, int? progress = null)
