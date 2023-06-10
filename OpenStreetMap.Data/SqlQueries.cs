@@ -19,6 +19,12 @@ namespace OpenStreetMap.Data
             FROM {WayNode.TableName}
         ";
 
+        internal const string GetAllWayNodesOfWay = @$"
+            SELECT *
+            FROM {WayNode.TableName}
+            WHERE {nameof(WayNode.WayId)} = ?
+        ";
+
         internal const string GetAllNodesOfWay = @$"
             SELECT
 	            N.*
@@ -46,6 +52,29 @@ namespace OpenStreetMap.Data
             WHERE
 	            WN.{nameof(WayNode.IsEndNode)} = 1
                 and WN.{nameof(WayNode.IsCrossroad)} = 0
+        ";
+
+        internal const string GetEndNodesIdsOfCompoundWay = $@"
+            SELECT
+	            WN.*
+            FROM {CompoundWayPart.TableName} as CWP
+            LEFT JOIN {Way.TableName} as W on W.{nameof(Way.Id)} = CWP.{nameof(CompoundWayPart.WayId)}
+            LEFT JOIN {WayNode.TableName} as WN on WN.{nameof(WayNode.WayId)} = W.{nameof(Way.Id)}
+            WHERE
+	            CWP.{nameof(CompoundWayPart.CompoundWayId)} = ?
+	            and WN.{nameof(WayNode.IsEndNode)} = 1
+            GROUP BY WN.{nameof(WayNode.NodeId)}
+            HAVING count(*) = 1
+        ";
+
+        internal const string GetEndNodeIdsOfWay = $@"
+            SELECT
+	            {nameof(WayNode.NodeId)}
+            FROM
+	            {WayNode.TableName}
+            WHERE
+	            {nameof(WayNode.WayId)} = ?
+	            and {nameof(WayNode.IsEndNode)} = 1
         ";
     }
 }

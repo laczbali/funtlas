@@ -7,15 +7,19 @@ namespace OpenStreetMap.Data.Download
 {
     internal class MapDownloadJob
     {
+        // progress tracking
         internal event EventHandler<JobStatus>? OnDownloadProgress;
         internal event EventHandler<JobStatus>? OnDownloadComplete;
 
+        // options
         internal Area? BoundingBox;
         internal WayRank? WayRanks;
         internal string DbPath;
         internal string DbName;
         internal string DbFullPath => Path.Combine(DbPath, DbName);
+        internal bool DeleteDbOnFail = true;
 
+        // dependencies
         private readonly OverpassAPI overpassAPI;
 
         internal MapDownloadJob(OverpassAPI overpassAPI)
@@ -46,6 +50,11 @@ namespace OpenStreetMap.Data.Download
             }
             catch (Exception e)
             {
+                if (DeleteDbOnFail)
+                {
+                    File.Delete(DbFullPath);
+                }
+
                 ReportError(e, "Execution failed");
             }
         }
@@ -81,8 +90,7 @@ namespace OpenStreetMap.Data.Download
 
                 foreach (var v in views)
                 {
-                    var script = $"{ViewDefinitions.CreateViewBaseQuery}\n{v}";
-                    await db.ExecuteAsync(script);
+                    await db.ExecuteAsync(v);
                 }
             });
         }
@@ -283,7 +291,7 @@ namespace OpenStreetMap.Data.Download
         {
             ReportProgress("Building compound ways");
 
-            // build compound ways
+            #region build compound ways
 
             var allEndWayNodes = await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
             {
@@ -321,7 +329,9 @@ namespace OpenStreetMap.Data.Download
             }
             while (addedNew);
 
-            // get rid of duplicates, save to DB
+            #endregion
+
+            #region get rid of duplicates, build models
 
             compounds = compounds.DistinctBy(compounds =>
             {
@@ -333,16 +343,10 @@ namespace OpenStreetMap.Data.Download
 
             var newCompoundWays = new List<Models.CompoundWay>();
             var newCompoundWayParts = new List<Models.CompoundWayPart>();
-            int compoundWayIndex = 0;
+            int compoundWayIndex = 1;
             foreach (var compound in compounds)
             {
-                var compoundWayParts = compound.Distinct().Select(x => new Models.CompoundWayPart
-                {
-                    CompoundWayId = compoundWayIndex,
-                    WayId = x
-                });
-
-                if (!compoundWayParts.Any())
+                if (!compound.Any())
                 {
                     continue;
                 }
@@ -352,16 +356,86 @@ namespace OpenStreetMap.Data.Download
                     Id = compoundWayIndex
                 });
 
-                newCompoundWayParts.AddRange(compoundWayParts);
+                newCompoundWayParts.AddRange(compound.Distinct().Select(x => new Models.CompoundWayPart
+                {
+                    CompoundWayId = compoundWayIndex,
+                    WayId = x,
+                    SortOrder = -1
+                }).ToList());
 
                 compoundWayIndex++;
             }
 
+            // save to db
             await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
             {
                 await db.InsertAllAsync(newCompoundWays);
                 await db.InsertAllAsync(newCompoundWayParts);
             });
+
+            #endregion
+
+            #region calculate sort orders
+
+            foreach (var compWay in newCompoundWays)
+            {
+                var compWayId = compWay.Id;
+                var borderNodeIds = (await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+                {
+                    return await db.QueryAsync<Models.WayNode>(SqlQueries.GetEndNodesIdsOfCompoundWay, compWayId);
+                })).Select(x => x.NodeId);
+
+                // debug
+                if (!borderNodeIds.Any())
+                {
+                    Console.WriteLine();
+                }
+
+                var endNodeId = borderNodeIds.Last();
+                var currentWayStartNodeId = borderNodeIds.First();
+                var currentWayId = (await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+                {
+                    return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllWayNodesOfNode, currentWayStartNodeId);
+                })).First().WayId;
+
+                int sortOrder = 0;
+                var reachedEnd = false;
+
+                while (!reachedEnd)
+                {
+                    // set sort order for current way
+                    newCompoundWayParts.First(cwp => cwp.WayId == currentWayId).SortOrder = sortOrder;
+                    sortOrder++;
+
+                    // get the other end of the current way
+                    var wayNodes = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+                    {
+                        return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllWayNodesOfWay, currentWayId);
+                    });
+                    currentWayStartNodeId = wayNodes.First(wn => wn.NodeId != currentWayStartNodeId && wn.IsEndNode).NodeId;
+
+                    // if the other end is the total end, we are done
+                    if (currentWayStartNodeId == endNodeId)
+                    {
+                        reachedEnd = true;
+                        continue;
+                    }
+
+                    // otherwise, get the next way
+                    var wayNodesOfStartNode = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+                    {
+                        return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllWayNodesOfNode, currentWayStartNodeId);
+                    });
+                    currentWayId = wayNodesOfStartNode.First(wn => wn.WayId != currentWayId).WayId;
+                }
+            }
+
+            await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+            {
+                await db.UpdateAllAsync(newCompoundWayParts);
+            });
+
+            #endregion
         }
 
         /// <summary>

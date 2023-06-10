@@ -4,9 +4,8 @@ namespace OpenStreetMap.Data
 {
     internal static class ViewDefinitions
     {
-        internal const string CreateViewBaseQuery = $@"CREATE VIEW ? AS";
-
         internal const string CompoundWayData = $@"
+            CREATE VIEW CompoundWayData AS
             SELECT
 	            CW.{nameof(CompoundWay.Id)} as Id,
 	            count(*) as NodeCount,
