@@ -5,9 +5,9 @@ namespace OpenStreetMap.Data.Download
 {
     public class MapDownloadProvider
     {
-        private readonly OverpassAPI overpassAPI;
+        private readonly OverpassApiProvider overpassAPI;
 
-        public MapDownloadProvider(OverpassAPI overpassAPI)
+        public MapDownloadProvider(OverpassApiProvider overpassAPI)
         {
             this.overpassAPI = overpassAPI;
         }

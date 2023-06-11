@@ -20,9 +20,9 @@ namespace OpenStreetMap.Data.Download
         internal bool DeleteDbOnFail = true;
 
         // dependencies
-        private readonly OverpassAPI overpassAPI;
+        private readonly OverpassApiProvider overpassAPI;
 
-        internal MapDownloadJob(OverpassAPI overpassAPI)
+        internal MapDownloadJob(OverpassApiProvider overpassAPI)
         {
             this.overpassAPI = overpassAPI;
 

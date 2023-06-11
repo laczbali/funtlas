@@ -17,7 +17,7 @@ namespace Funtlas.UI
         {
             services.AddMvc();
 
-            services.AddSingleton<OverpassAPI>();
+            services.AddSingleton<OverpassApiProvider>();
             services.AddSingleton<MapDownloadProvider>();
         }
 
