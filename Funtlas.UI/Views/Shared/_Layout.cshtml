@@ -10,15 +10,47 @@
           crossorigin="" />
 
     <style>
-        #map {
-            height: 600px;
+
+        body {
+            background-color: rgb(37, 37, 38);
+            color: rgb(201, 201, 201);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
+        .navbar {
+            background-color: rgb(201, 201, 201);
+            color: rgb(37, 37, 38);
+            padding: 1rem;
+            height: 1.5rem;
+        }
+
+        .navbar a {
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+        }
+
+        .navbar-separator {
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+        }
+
+        a, a:visited {
+            text-decoration: none;
+            color: unset;
+        }
+
     </style>
 
     @RenderSection("Styles", required: false)
 
 </head>
 <body>
+    <div class="navbar">
+        <a href="/">Home</a>
+        <span class="navbar-separator">|</span>
+        @RenderSection("Navbar", required: false)
+    </div>
+
     <div>
         @RenderBody()
     </div>

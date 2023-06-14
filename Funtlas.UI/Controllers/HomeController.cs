@@ -15,7 +15,7 @@ namespace Funtlas.UI.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            return View("~/Views/Display/RegionSelect.cshtml");
+            return View();
         }
 
         [HttpGet]
@@ -27,7 +27,8 @@ namespace Funtlas.UI.Controllers
         [HttpGet]
         public IActionResult StatusUpdate()
         {
-            return Ok(this.mapDownloadProvider.GetJobStatus());
+            var status = this.mapDownloadProvider.GetJobStatus();
+            return Ok(status);
         }
     }
 }

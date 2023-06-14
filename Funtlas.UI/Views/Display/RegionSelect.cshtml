@@ -1,11 +1,28 @@
 ﻿<div id="map"></div>
 
-<div>
-    <button id="download" disabled>Download</button>
-</div>
-
 @{
     Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+@section Navbar {
+    <a href="#" id="download" class="a-disabled">
+        Download
+    </a>
+}
+
+@section Styles {
+    <style>
+
+        #map {
+            height: 600px;
+        }
+
+        .a-disabled {
+            text-decoration: line-through;
+            cursor: default;
+        }
+
+    </style>
 }
 
 @section Scripts
@@ -36,7 +53,7 @@
                 });
 
                 // disable the download button
-                document.getElementById("download").disabled = true;
+                document.getElementById("download").classList.add("a-disabled");
 
                 return;
             }
@@ -52,7 +69,7 @@
                 L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
 
                 // enable the download button
-                document.getElementById("download").disabled = false;
+                document.getElementById("download").classList.remove("a-disabled");
             }
         });
     </script>
@@ -60,11 +77,17 @@
     @* handle download button click *@
     <script>
         document.getElementById("download").addEventListener("click", async () => {
+            // check if it is disabled
+            var isDisabled = document.getElementById("download").classList.contains("a-disabled");
+            if(isDisabled) {
+                return;
+            }
+
+            // send request to backend
             var requestBody = {
                 "bounds": bounds.map(b => { return { "Lat": b.lat, "Lon": b.lng } })
             };
 
-            // send request to backend
             var response = await fetch("/Display/RegionSelect", {
                 method: "POST",
                 headers: {

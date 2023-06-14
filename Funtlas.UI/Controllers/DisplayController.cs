@@ -14,6 +14,12 @@ namespace Funtlas.UI.Controllers
             this.mapDownloadProvider = mapDownloadProvider;
         }
 
+        [HttpGet]
+        public IActionResult RegionSelect()
+        {
+            return View("~/Views/Display/RegionSelect.cshtml");
+        }
+
         [HttpPost]
         public IActionResult RegionSelect([FromBody] RegionSelect selector)
         {

@@ -1,1 +1,101 @@
-﻿this is status
+﻿<div id="status-display"></div>
+
+@{
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+@section Scripts
+{
+    <script>
+        var pollInterval = setInterval( async () => {
+
+            var response = await fetch("/Home/StatusUpdate", {
+                method: "GET"
+            });
+
+            if(response.status !== 200)
+            {
+                return;
+            }
+
+            var responseBody = await response.json();
+
+            var hourMinuteString = new Date().toISOString().slice(11, 16);
+            var progressString = responseBody.progress?.toString().padStart(2, "0") ?? "--";
+            var updateItemRaw = "";
+
+            if (responseBody.error === null && responseBody.isRunning) {
+                updateItemRaw =
+                `
+                    <div class="status-item-field">${hourMinuteString}</div>
+                    <div class="status-item-field">${progressString}%</div>
+                    <div class="status-item-field">${responseBody.message}</div>
+                `;
+            }
+            if (responseBody.error === null && !responseBody.isRunning) {
+                updateItemRaw =
+                `
+                    <div class="status-item-field">${hourMinuteString}</div>
+                    <div class="status-item-field">DONE</div>
+                `;
+            }
+            if (responseBody.error !== null) {
+                updateItemRaw =
+                `
+                    <div class="status-item-field">${hourMinuteString}</div>
+                    <div class="status-item-field">ERR</div>
+                    <div class="status-item-field">${responseBody.message}</div>
+                    <div class="status-item-field">${responseBody.error.message}</div>
+                `;
+            }
+
+            var updateItemHtml = document.createElement('div');
+            updateItemHtml.innerHTML = updateItemRaw;
+            updateItemHtml.classList.add("status-item");
+
+            if (!responseBody.isRunning && responseBody.error === null)
+            {
+                updateItemHtml.classList.add("status-item-done");
+            }
+            else if (responseBody.error !== null)
+            {
+                updateItemHtml.classList.add("status-item-error");
+            }
+
+            var lastUpdateItem = document.getElementsByClassName("status-item")[0];
+            if (!updateItemHtml.isEqualNode(lastUpdateItem))
+            {
+                document.getElementById("status-display").insertBefore(updateItemHtml, lastUpdateItem);
+            }
+
+            if(!responseBody.isRunning) {
+                clearInterval(pollInterval);
+            }
+
+        }, 500);
+    </script>
+}
+
+@section Styles
+{
+    <style>
+
+        #status-display {
+            font-family: monospace, monospace;
+        }
+
+        .status-item-done {
+            background-color: #005e00;
+        }
+
+        .status-item-error {
+            background-color: #8d0000;
+        }
+
+        .status-item-field {
+            display: inline-block;
+            margin-right: 2rem;
+        }
+
+    </style>
+}
