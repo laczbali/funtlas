@@ -44,6 +44,17 @@ namespace OpenStreetMap.Data
 	            {nameof(WayNode.NodeId)} = ?
         ";
 
+        internal const string GetAllCompoundWayNodesOfNode = $@"
+            SELECT
+	            WN.*
+            FROM {WayNode.TableName} as WN
+            LEFT JOIN {Way.TableName} as W on W.{nameof(Way.Id)} = WN.{nameof(WayNode.WayId)}
+            LEFT JOIN {CompoundWayPart.TableName} as CWP on CWP.{nameof(CompoundWayPart.WayId)} = W.{nameof(Way.Id)}
+            WHERE
+	            WN.{nameof(WayNode.NodeId)} = ?
+	            AND CWP.{nameof(CompoundWayPart.CompoundWayId)} = ?
+        ";
+
         internal const string GetNonCrossEndWayNodes = @$"
             SELECT
 	            WN.*
@@ -87,8 +98,10 @@ namespace OpenStreetMap.Data
             FROM {CompoundWayPart.TableName} as CWP
             LEFT JOIN {WayNode.TableName} as WN on WN.{nameof(WayNode.WayId)} = CWP.{nameof(CompoundWayPart.WayId)}
             LEFT JOIN {Node.TableName} as N on N.{nameof(Node.Id)} = WN.{nameof(WayNode.NodeId)}
-            WHERE CWP.{nameof(CompoundWayPart.CompoundWayId)} = 1
-            ORDER BY CWP.{nameof(CompoundWayPart.SortOrder)}, WN.{nameof(WayNode.SortOrder)}
+            WHERE CWP.{nameof(CompoundWayPart.CompoundWayId)} = ?
+            ORDER BY
+                CWP.{nameof(CompoundWayPart.SortOrder)},
+                WN.{nameof(WayNode.SortOrder)} * (((1 + CWP.{nameof(CompoundWayPart.IsNodeSortOrderFlipped)}) * -2) + 3)
         ";
     }
 }

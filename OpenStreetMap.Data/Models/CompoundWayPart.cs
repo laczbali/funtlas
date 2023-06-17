@@ -33,5 +33,6 @@ namespace OpenStreetMap.Data.Models
         }
 
         public int SortOrder { get; set; }
+        public bool IsNodeSortOrderFlipped { get; set; }
     }
 }

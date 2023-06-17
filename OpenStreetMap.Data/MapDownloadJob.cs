@@ -380,25 +380,26 @@ namespace OpenStreetMap.Data
             foreach (var compWay in newCompoundWays)
             {
                 var compWayId = compWay.Id;
-                var borderNodeIds = (await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
+                var borderNodeWays = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
                 {
                     return await db.QueryAsync<Models.WayNode>(SqlQueries.GetEndNodesIdsOfCompoundWay, compWayId);
-                })).Select(x => x.NodeId);
+                });
 
-                var endNodeId = borderNodeIds.Last();
-                var currentWayStartNodeId = borderNodeIds.First();
-                var currentWayId = (await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
-                {
-                    return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllWayNodesOfNode, currentWayStartNodeId);
-                })).First().WayId;
+                var startWayNode = borderNodeWays.First();
+                var currentWayStartNodeId = startWayNode.NodeId;
+                var endNodeId = borderNodeWays.Last().NodeId;
+
+                var currentWayId = startWayNode.WayId;
 
                 int sortOrder = 0;
+                bool nodeSortOrderFlipped = startWayNode.SortOrder != 0;
                 var reachedEnd = false;
 
                 while (!reachedEnd)
                 {
                     // set sort order for current way
-                    newCompoundWayParts.First(cwp => cwp.WayId == currentWayId).SortOrder = sortOrder;
+                    newCompoundWayParts.First(cwp => cwp.CompoundWayId == compWayId && cwp.WayId == currentWayId).SortOrder = sortOrder;
+                    newCompoundWayParts.First(cwp => cwp.CompoundWayId == compWayId && cwp.WayId == currentWayId).IsNodeSortOrderFlipped = nodeSortOrderFlipped;
                     sortOrder++;
 
                     // get the other end of the current way
@@ -418,9 +419,11 @@ namespace OpenStreetMap.Data
                     // otherwise, get the next way
                     var wayNodesOfStartNode = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
                     {
-                        return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllWayNodesOfNode, currentWayStartNodeId);
+                        return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllCompoundWayNodesOfNode, currentWayStartNodeId, compWayId);
                     });
-                    currentWayId = wayNodesOfStartNode.First(wn => wn.WayId != currentWayId).WayId;
+                    var currentWayNode = wayNodesOfStartNode.First(wn => wn.WayId != currentWayId);
+                    currentWayId = currentWayNode.WayId;
+                    nodeSortOrderFlipped = currentWayNode.SortOrder != 0;
                 }
             }
 

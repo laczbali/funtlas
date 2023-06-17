@@ -72,20 +72,9 @@ namespace OpenStreetMap.Data
             {
                 cw.Nodes = await DbUtil.UsingDbAsync(mapFullPath, async (db) =>
                 {
-                    return await db.QueryAsync<Models.Node>(SqlQueries.GetNodesOfCompoundWay);
+                    return await db.QueryAsync<Models.Node>(SqlQueries.GetNodesOfCompoundWay, cw.Id);
                 });
             }
-
-            // the issue here, is that we have a sort order for
-            // - ways in a compound way
-            // - nodes in a way
-            // the two don't necessarliy line up, so instead of
-            //      A1-2-3 B1-2-3 C1-2-3
-            // it might go like
-            //      A1-2-3 B3-2-1 C1-2-3
-            // so we need to add an "orientation" field to the CompoundWayParts,
-            // calculate that value during the initial buildup,
-            // and use it here
 
             return wayData;
         }
