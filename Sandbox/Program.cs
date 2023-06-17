@@ -1,9 +1,9 @@
 ﻿using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
-using OpenStreetMap.Data.Download;
+using OpenStreetMap.Data;
 
 var overpassApi = new OverpassApiProvider();
-var mapDownloadProvider = new MapDownloadProvider(overpassApi);
+var mapDownloadProvider = new MapDataProvider(overpassApi);
 
 var testArea = new Area
 {

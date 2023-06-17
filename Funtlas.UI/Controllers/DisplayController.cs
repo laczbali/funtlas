@@ -1,15 +1,15 @@
 ﻿using Funtlas.UI.Models.Controller;
 using Microsoft.AspNetCore.Mvc;
 using OpenStreetMap.API.Models;
-using OpenStreetMap.Data.Download;
+using OpenStreetMap.Data;
 
 namespace Funtlas.UI.Controllers
 {
     public class DisplayController : Controller
     {
-        private readonly MapDownloadProvider mapDownloadProvider;
+        private readonly MapDataProvider mapDownloadProvider;
 
-        public DisplayController(MapDownloadProvider mapDownloadProvider)
+        public DisplayController(MapDataProvider mapDownloadProvider)
         {
             this.mapDownloadProvider = mapDownloadProvider;
         }

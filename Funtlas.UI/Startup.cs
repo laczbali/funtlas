@@ -1,6 +1,6 @@
 ﻿using ElectronNET.API;
 using OpenStreetMap.API;
-using OpenStreetMap.Data.Download;
+using OpenStreetMap.Data;
 
 namespace Funtlas.UI
 {
@@ -18,7 +18,7 @@ namespace Funtlas.UI
             services.AddMvc();
 
             services.AddSingleton<OverpassApiProvider>();
-            services.AddSingleton<MapDownloadProvider>();
+            services.AddSingleton<MapDataProvider>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

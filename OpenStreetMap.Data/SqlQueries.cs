@@ -30,7 +30,7 @@ namespace OpenStreetMap.Data
 	            N.*
             FROM {Node.TableName} as N
             INNER JOIN {WayNode.TableName} as WN ON
-	            WN.{nameof(WayNode.NodeId)} = N.Id
+	            WN.{nameof(WayNode.NodeId)} = N.{nameof(Node.Id)}
 	            and WN.{nameof(WayNode.WayId)} = ?
             ORDER BY WN.SortOrder
         ";
@@ -75,6 +75,20 @@ namespace OpenStreetMap.Data
             WHERE
 	            {nameof(WayNode.WayId)} = ?
 	            and {nameof(WayNode.IsEndNode)} = 1
+        ";
+
+        internal const string GetAllCompoundWayData = $@"
+            SELECT * FROM {nameof(ViewDefinitions.CompoundWayData)}
+        ";
+
+        internal const string GetNodesOfCompoundWay = $@"
+            SELECT
+	            DISTINCT N.*
+            FROM {CompoundWayPart.TableName} as CWP
+            LEFT JOIN {WayNode.TableName} as WN on WN.{nameof(WayNode.WayId)} = CWP.{nameof(CompoundWayPart.WayId)}
+            LEFT JOIN {Node.TableName} as N on N.{nameof(Node.Id)} = WN.{nameof(WayNode.NodeId)}
+            WHERE CWP.{nameof(CompoundWayPart.CompoundWayId)} = 1
+            ORDER BY CWP.{nameof(CompoundWayPart.SortOrder)}, WN.{nameof(WayNode.SortOrder)}
         ";
     }
 }

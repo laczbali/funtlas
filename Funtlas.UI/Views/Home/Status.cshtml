@@ -40,12 +40,15 @@
                 `;
             }
             if (responseBody.error !== null) {
+                var errorString = responseBody.error.message.split('\n')[0];
+                console.warn(responseBody.error.message);
+
                 updateItemRaw =
                 `
                     <div class="status-item-field">${hourMinuteString}</div>
                     <div class="status-item-field">ERR</div>
                     <div class="status-item-field">${responseBody.message}</div>
-                    <div class="status-item-field">${responseBody.error.message}</div>
+                    <div class="status-item-field">${errorString}</div>
                 `;
             }
 

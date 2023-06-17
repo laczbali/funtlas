@@ -1,6 +1,19 @@
-﻿<div>
+﻿@using Funtlas.UI.Models.View;
+
+<div>
     Available Maps
 </div>
+
+<div>
+    @foreach (var map in Model.Maps)
+    {
+        <div>
+            <a href="/Home/OpenMap?mapName=@map" onclick="openDb('@map')">@map</a>
+        </div>
+    }
+</div>
+
+@model HomePage
 
 @{
     Layout = "/Views/Shared/_Layout.cshtml";

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using OpenStreetMap.API;
 using OpenStreetMap.API.Models;
 
-namespace OpenStreetMap.Data.Download
+namespace OpenStreetMap.Data
 {
     internal class MapDownloadJob
     {
@@ -26,7 +26,7 @@ namespace OpenStreetMap.Data.Download
         {
             this.overpassAPI = overpassAPI;
 
-            DbPath = FileSystemUtil.EnsureDir(Path.Combine(Directory.GetCurrentDirectory(), "maps"));
+            DbPath = FileSystemUtil.EnsureDir(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "maps"));
             DbName = $"{DateTime.Now.Ticks}.db3";
         }
 
@@ -293,7 +293,7 @@ namespace OpenStreetMap.Data.Download
 
             #region build compound ways
 
-            var allEndWayNodes = await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+            var allEndWayNodes = await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
             {
                 return await db.QueryAsync<Models.WayNode>(SqlQueries.GetNonCrossEndWayNodes);
             });
@@ -380,20 +380,14 @@ namespace OpenStreetMap.Data.Download
             foreach (var compWay in newCompoundWays)
             {
                 var compWayId = compWay.Id;
-                var borderNodeIds = (await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+                var borderNodeIds = (await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
                 {
                     return await db.QueryAsync<Models.WayNode>(SqlQueries.GetEndNodesIdsOfCompoundWay, compWayId);
                 })).Select(x => x.NodeId);
 
-                // debug
-                if (!borderNodeIds.Any())
-                {
-                    Console.WriteLine();
-                }
-
                 var endNodeId = borderNodeIds.Last();
                 var currentWayStartNodeId = borderNodeIds.First();
-                var currentWayId = (await DbUtil.UsingDbAsync(this.DbFullPath, async (db) =>
+                var currentWayId = (await DbUtil.UsingDbAsync(DbFullPath, async (db) =>
                 {
                     return await db.QueryAsync<Models.WayNode>(SqlQueries.GetAllWayNodesOfNode, currentWayStartNodeId);
                 })).First().WayId;
